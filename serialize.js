@@ -1,5 +1,14 @@
 'use strict';
 
+/* istanbul ignore function */
+const hasBrokenStreamBase = (() => {
+  /* work around https://github.com/nodejs/node/pull/16860 */
+  if (typeof process === 'undefined') return false;
+  const version = String(process.version).match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!version) return false;
+  return +version[1] === 9 || (+version[1] === 8 && +version[2] >= 9);
+})();
+
 const isBigEndian = (() => {
   const u16 = new Uint16Array([0x0102]);
   const u8 = new Uint8Array(u16.buffer);
@@ -130,6 +139,13 @@ class Context {
         const keys = Object.getOwnPropertyNames(value)
             .concat(Object.getOwnPropertySymbols(value));
         for (const key of keys) {
+          if (hasBrokenStreamBase &&
+              (key === 'fd' || key === '_externalStream' ||
+               key === 'bytesRead')) {
+            if (keys.includes('fd') && keys.includes('_externalStream') &&
+                keys.includes('bytesRead'))
+              continue;
+          }
           let descriptor;
           try {
             descriptor = Object.getOwnPropertyDescriptor(value, key);
