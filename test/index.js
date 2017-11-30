@@ -75,3 +75,13 @@ describe('Function.prototype.toString', function() {
         clone(function bar() {})), 'function bar() {}');
   });
 });
+
+describe('yields re-serialiable output', function() {
+  it('works', function() {
+    const ser1 = serialize(global);
+    const des1 = deserialize(ser1);
+    const ser2 = serialize(des1);
+    const des2 = deserialize(ser2);
+    const ser3 = serialize(des2);
+  });
+});

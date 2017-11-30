@@ -18,6 +18,8 @@ const isBigEndian = (() => {
   return u8[0] === 0x01;
 })();
 
+const PlaceholderSymbol = Symbol('This symbol serves as a placeholder');
+
 class Context {
   constructor(buffer) {
     this.buffer = buffer;
@@ -80,8 +82,9 @@ class Context {
         this.seen.push(str);
         return str;
       case c `S`:
+        const phIndex = this.seen.push(PlaceholderSymbol) - 1;
         const sym = Symbol(this.deserialize());
-        this.seen.push(sym);
+        this.seen[phIndex] = sym;
         return sym;
     }
     let obj;
