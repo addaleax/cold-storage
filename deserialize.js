@@ -99,9 +99,21 @@ class Context {
           `(${String.fromCharCode(type)}) at ${this.position} unknown))`);
       obj = {};
       this.seen.push(obj);
+
+      const boxIndex = this.readByte();
+      if (boxIndex !== 0xff) {
+        if (boxIndex === 2 /* Date */)
+          obj = new Date(this.deserialize());
+        else
+          obj = Object(this.deserialize());
+      }
     }
-    const proto = this.deserialize();
-    Object.setPrototypeOf(obj, proto);
+
+    {
+      const proto = this.deserialize();
+      Object.setPrototypeOf(obj, proto);
+    }
+
     while (this.buffer[this.position] !== c `}`) {
       const key = this.deserialize();
       const flags = this.readByte();

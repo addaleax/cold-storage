@@ -43,6 +43,18 @@ describe('cold-storage', function() {
   it('can handle proxied functions', function() {
     assert.strictEqual(clone(new Proxy(function foo() {}, {})).name, 'foo');
   });
+
+  it('can handle boxed primitives', function() {
+    for (const v of [
+      Object(Symbol('foo')),
+      new Number(42),
+      new String('abc'),
+      new Boolean(true)
+    ]) {
+      assert.strictEqual(util.inspect(v.valueOf.call(v)),
+                         util.inspect(v.valueOf.call(clone(v))));
+    }
+  });
 });
 
 describe('deserialize', function() {

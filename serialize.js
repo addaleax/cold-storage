@@ -23,6 +23,9 @@ function tryStringifyFunction(fn) {
   }
 }
 
+const ValueOfs = [Symbol, Number, Date, Boolean, String]
+    .map(x => Function.prototype.call.bind(x.prototype.valueOf));
+
 class Context {
   constructor() {
     this.seen = new Map();
@@ -134,8 +137,22 @@ class Context {
           this.pushChar('[');
         } else {
           this.pushChar('{');
+
+          let unboxed, i = 0;
+          for (const v of ValueOfs) {
+            try {
+              unboxed = v(value);
+            } catch (err) { i++; continue; }
+            this.pushByte(i);
+          }
+          if (unboxed !== undefined)
+            this.serialize(unboxed);
+          else
+            this.pushByte(0xff);
         }
+
         this.serialize(Object.getPrototypeOf(value));
+
         const keys = Object.getOwnPropertyNames(value)
             .concat(Object.getOwnPropertySymbols(value));
         for (const key of keys) {
