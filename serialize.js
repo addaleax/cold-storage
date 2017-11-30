@@ -32,7 +32,7 @@ class Context {
     this.counter = 0;
     this.target = [];
     this._curbuf = Buffer.alloc(4096);
-    this._curbuf[0] = 1; // version
+    this._curbuf[0] = 2; // version
     this.position = 1;
   }
 

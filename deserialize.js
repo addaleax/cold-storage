@@ -21,7 +21,7 @@ const isBigEndian = (() => {
 class Context {
   constructor(buffer) {
     this.buffer = buffer;
-    if (this.buffer[0] !== 1)
+    if (this.buffer[0] !== 2)
       throw new Error('cannot understand serialization format');
     this.seen = [];
     this.position = 1;
