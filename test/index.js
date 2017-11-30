@@ -76,8 +76,9 @@ describe('Function.prototype.toString', function() {
   });
 });
 
-describe('yields re-serialiable output', function() {
+describe('yields re-serializable output', function() {
   it('works', function() {
+    this.timeout(10000);
     const ser1 = serialize(global);
     const des1 = deserialize(ser1);
     const ser2 = serialize(des1);
