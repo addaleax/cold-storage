@@ -32,7 +32,7 @@ describe('cold-storage', function() {
   });
 
   it('can clone NaN', function() {
-    assert.notStrictEqual(clone(NaN), clone(NaN));
+    assert.strictEqual(util.inspect(clone(NaN)), 'NaN');
   });
 
   it('can handle native handles', function() {
