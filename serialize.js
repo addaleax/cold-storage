@@ -36,12 +36,27 @@ class Context {
     this.position = 1;
   }
 
+  fork() {
+    this.flush();
+    const context = new Context();
+    context.seen = new Map([...this.seen]);
+    context.counter = this.counter;
+    context.target = this.target;
+    context.position = this.position;
+    return context;
+  }
+
   getBuffer() {
     this.flush();
-    return Buffer.concat(this.target);
+    if (this.target.length !== 1) {
+      this.target = [ Buffer.concat(this.target) ];
+    }
+    return this.target[0];
   }
 
   flush() {
+    if (this.position === 0)
+      return;
     this.target.push(this._curbuf.slice(0, this.position));
     this._curbuf = Buffer.alloc(4096);
     this.position = 0;
@@ -199,3 +214,4 @@ function serialize(value) {
 }
 
 module.exports = serialize;
+module.exports.Context = Context;

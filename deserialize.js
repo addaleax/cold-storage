@@ -142,3 +142,4 @@ function deserialize(buffer) {
 }
 
 module.exports = deserialize;
+module.exports.Context = Context;
