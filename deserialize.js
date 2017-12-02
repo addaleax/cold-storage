@@ -66,6 +66,7 @@ class Context {
       case c `u`: return undefined;
       case c `f`: return false;
       case c `t`: return true;
+      case c `I`: return this.readUint32() | 0;
       case 0:
       case 1:
       case 2:

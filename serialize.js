@@ -16,6 +16,9 @@ const isBigEndian = (() => {
   return u8[0] === 0x01;
 })();
 
+const ObjectPrototypeToString =
+    Function.prototype.call.bind(Object.prototype.toString);
+
 function tryStringifyFunction(fn) {
   try {
     return String(fn);
@@ -79,19 +82,27 @@ class Context {
 
   pushFloat64(f64) {
     const arr = new Float64Array([f64]);
-    const asUint8 = Buffer.from(arr.buffer);
+    const asUint8 = new Uint8Array(arr.buffer);
     /* istanbul ignore next */
     if (isBigEndian) asUint8.swap64();
-    asUint8.copy(this.curbuf, this.position);
+    this.curbuf.set(asUint8, this.position);
     this.position += 8;
   }
 
   pushUint32(u32) {
-    const arr = new Uint32Array([u32]);
-    const asUint8 = Buffer.from(arr.buffer);
+    const p = this.position;
     /* istanbul ignore next */
-    if (isBigEndian) asUint8.swap32();
-    asUint8.copy(this.curbuf, this.position);
+    if (isBigEndian) {
+      this.curbuf[p+3] = (u32 & 0xff);
+      this.curbuf[p+2] = ((u32 >> 8) & 0xff);
+      this.curbuf[p+1] = ((u32 >> 16) & 0xff);
+      this.curbuf[p+0] = (u32 >>> 24);
+    } else {
+      this.curbuf[p+0] = (u32 & 0xff);
+      this.curbuf[p+1] = ((u32 >> 8) & 0xff);
+      this.curbuf[p+2] = ((u32 >> 16) & 0xff);
+      this.curbuf[p+3] = (u32 >>> 24);
+    }
     this.position += 4;
   }
 
@@ -117,9 +128,14 @@ class Context {
       return this.pushChar('t');
     if (typeof value === 'number') {
       if (value >= 0 && value < (1 << 11) && Number.isInteger(value) &&
-          !Object.is(value, -0)) {
+          1/value !== -Infinity) {
         this.pushByte(value >> 8);
         this.pushByte(value & 0xff);
+        return;
+      }
+      if ((value | 0) === value) {
+        this.pushChar('I');
+        this.pushUint32(value >>> 0);
         return;
       }
       this.pushChar('N');
@@ -152,14 +168,17 @@ class Context {
         } else if (Array.isArray(value)) {
           this.pushChar('[');
         } else {
+          const tag = ObjectPrototypeToString(value);
           this.pushChar('{');
 
           let unboxed, i = 0;
-          for (const v of ValueOfs) {
-            try {
-              unboxed = v(value);
-            } catch (err) { i++; continue; }
-            this.pushByte(i);
+          if (tag !== '[object Object]') {
+            for (const v of ValueOfs) {
+              try {
+                unboxed = v(value);
+              } catch (err) { i++; continue; }
+              this.pushByte(i);
+            }
           }
           if (unboxed !== undefined)
             this.serialize(unboxed);
@@ -169,8 +188,7 @@ class Context {
 
         this.serialize(Object.getPrototypeOf(value));
 
-        const keys = Object.getOwnPropertyNames(value)
-            .concat(Object.getOwnPropertySymbols(value));
+        const keys = Reflect.ownKeys(value);
         for (const key of keys) {
           /* istanbul ignore next */
           if (hasBrokenStreamBase &&
