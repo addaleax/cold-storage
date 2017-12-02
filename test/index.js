@@ -49,7 +49,8 @@ describe('cold-storage', function() {
       Object(Symbol('foo')),
       new Number(42),
       new String('abc'),
-      new Boolean(true)
+      new Boolean(true),
+      new Date()
     ]) {
       assert.strictEqual(util.inspect(v.valueOf.call(v)),
                          util.inspect(v.valueOf.call(clone(v))));
