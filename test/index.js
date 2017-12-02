@@ -79,7 +79,7 @@ describe('Function.prototype.toString', function() {
 
 describe('yields re-serializable output', function() {
   it('works', function() {
-    this.timeout(10000);
+    this.timeout(20000);
     const ser1 = serialize(global);
     const des1 = deserialize(ser1);
     const ser2 = serialize(des1);
@@ -90,7 +90,7 @@ describe('yields re-serializable output', function() {
 
 describe('works with pre-forkable globals', function() {
   it('works', function() {
-    this.timeout(10000);
+    this.timeout(20000);
     const input = { foo: 'bar' };
 
     const sctx = new serialize.Context();
