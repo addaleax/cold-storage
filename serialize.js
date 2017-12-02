@@ -1,12 +1,13 @@
 'use strict';
 
-/* istanbul ignore function */
+/* istanbul ignore next */
 const hasBrokenStreamBase = (() => {
   /* work around https://github.com/nodejs/node/pull/16860 */
   if (typeof process === 'undefined') return false;
   const version = String(process.version).match(/(\d+)\.(\d+)\.(\d+)/);
   if (!version) return false;
-  return +version[1] === 9 || (+version[1] === 8 && +version[2] >= 9);
+  return (+version[1] === 9 && +version[2] < 2) ||
+         (+version[1] === 8 && +version[2] >= 9 && +version[3] < 2);
 })();
 
 const isBigEndian = (() => {
@@ -171,6 +172,7 @@ class Context {
         const keys = Object.getOwnPropertyNames(value)
             .concat(Object.getOwnPropertySymbols(value));
         for (const key of keys) {
+          /* istanbul ignore next */
           if (hasBrokenStreamBase &&
               (key === 'fd' || key === '_externalStream' ||
                key === 'bytesRead')) {
