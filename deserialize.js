@@ -59,7 +59,7 @@ class Context {
     return str;
   }
 
-  deserialize() {
+  deserialize(projectOn = undefined) {
     const type = this.readByte();
     switch (type) {
       case c `n`: return null;
@@ -90,18 +90,18 @@ class Context {
     let obj;
     if (type === c `F`) {
       obj = function() {};
-      this.seen.push(obj);
+      this.seen.push(projectOn || obj);
       const stringified = this.deserialize();
       functionStrings.set(obj, stringified);
     } else if (type === c `[`) {
       obj = [];
-      this.seen.push(obj);
+      this.seen.push(projectOn || obj);
     } else {
       if (type !== c `{`)
         throw new Error(`Invalid serialization data (Type ${type} ` +
           `(${String.fromCharCode(type)}) at ${this.position} unknown))`);
       obj = {};
-      this.seen.push(obj);
+      const index = this.seen.push(projectOn || obj) - 1;
 
       const boxIndex = this.readByte();
       if (boxIndex !== 0xff) {
@@ -109,11 +109,13 @@ class Context {
           obj = new Date(this.deserialize());
         else
           obj = Object(this.deserialize());
+        this.seen[index] = obj;
       }
     }
 
     {
-      const proto = this.deserialize();
+      const pproto = projectOn && Object.getPrototypeOf(projectOn);
+      const proto = this.deserialize(pproto);
       Object.setPrototypeOf(obj, proto);
     }
 
@@ -124,12 +126,14 @@ class Context {
         enumerable: !!(flags & 0x01),
         configurable: !!(flags & 0x02)
       };
+      const pd =
+        (projectOn && Object.getOwnPropertyDescriptor(projectOn, key)) || {};
       if (flags & 0x04) {
         descriptor.writable = !!(flags & 0x08);
-        descriptor.value = this.deserialize();
+        descriptor.value = this.deserialize(pd.value);
       } else {
-        descriptor.get = this.deserialize();
-        descriptor.set = this.deserialize();
+        descriptor.get = this.deserialize(pd.get);
+        descriptor.set = this.deserialize(pd.set);
       }
       Object.defineProperty(obj, key, descriptor);
     }

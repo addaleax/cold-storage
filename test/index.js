@@ -86,3 +86,23 @@ describe('yields re-serializable output', function() {
     const ser3 = serialize(des2);
   });
 });
+
+describe('works with pre-forkable globals', function() {
+  it('works', function() {
+    this.timeout(10000);
+    const input = { foo: 'bar' };
+
+    const sctx = new serialize.Context();
+    sctx.serialize({ global });
+    const fctx = sctx.fork();
+    fctx.serialize(input);
+    const buf = fctx.getBuffer();
+    const dctx = new deserialize.Context(buf);
+    dctx.deserialize({ global });
+
+    const output = dctx.deserialize();
+    assert.deepStrictEqual(output, input);
+    assert.notStrictEqual(output, input);
+    assert.strictEqual(Object.getPrototypeOf(output), Object.prototype);
+  });
+});
